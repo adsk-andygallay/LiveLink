@@ -29,10 +29,17 @@ try:
   from PySide2 import __version__
   import PySide2.QtCore
 except ImportError:
-  from PySide.QtCore import *
-  from PySide.QtGui import *
-  from PySide import __version__
-  import PySide.QtCore
+    try:
+        from PySide.QtCore import *
+        from PySide.QtGui import *
+        from PySide import __version__
+        import PySide.QtCore
+    except ImportError:
+        from PySide6.QtCore import *
+        from PySide6.QtGui import *
+        from PySide6.QtWidgets import *
+        from PySide6 import __version__
+        import PySide6.QtCore
 
 from UnrealLiveLinkSubjectTable import *
 from UnrealLiveLinkSettings import *
