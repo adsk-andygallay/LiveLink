@@ -37,7 +37,7 @@ except ImportError:
         from PySide6 import __version__
 
 class IPAddressLineEdit(QLineEdit):
-    class IPAddressRegExpValidator(QRegExpValidator):
+    class IPAddressRegExpValidator(QRegularExpressionValidator):
         validationChanged = Signal(QValidator.State)
 
         def validate(self, input, pos):
@@ -50,7 +50,7 @@ class IPAddressLineEdit(QLineEdit):
 
     _ipRange = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"   # Part of the regular expression
     _portRange = "([0-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])"
-    _ipRegex = QRegExp("^" + _ipRange + "\\." + _ipRange + "\\." + _ipRange + "\\." + _ipRange + ":" + _portRange + "$|0.0.0.0:0")
+    _ipRegex = QRegularExpression("^" + _ipRange + "\\." + _ipRange + "\\." + _ipRange + "\\." + _ipRange + ":" + _portRange + "$|0.0.0.0:0")
 
     def __init__(self, contents='', parent=None):
         super(IPAddressLineEdit, self).__init__(contents, parent)

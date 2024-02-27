@@ -22,6 +22,8 @@
 
 import os
 
+isMaya2025 = False
+
 try:
   from PySide2.QtCore import *
   from PySide2.QtGui import *
@@ -40,6 +42,7 @@ except ImportError:
         from PySide6.QtWidgets import *
         from PySide6 import __version__
         import PySide6.QtCore
+        isMaya2025 = True
 
 from UnrealLiveLinkSubjectTable import *
 from UnrealLiveLinkSettings import *
@@ -136,7 +139,10 @@ class UnrealLiveLinkWindow(QWidget):
         self.connectionFrame = QLabel()
         self.connectionFrame.setTextFormat(Qt.RichText)
         self.connectionFrame.setText('<b>No Connection</b>')
-        self.connectionFrame.setMargin(0)
+        if isMaya2025:
+            self.connectionFrame.setContentsMargins(0, 0, 0, 0)
+        else:
+            self.connectionFrame.setMargin(0)
         self.connectionFrame.setContentsMargins(5,3,0,0)
 
         # Menu bar
@@ -189,7 +195,10 @@ class UnrealLiveLinkWindow(QWidget):
 
         # Menu bar layout
         menuBarLayout = QHBoxLayout()
-        menuBarLayout.setMargin(0)
+        if isMaya2025:
+            self.connectionFrame.setContentsMargins(0, 0, 0, 0)
+        else:
+            self.connectionFrame.setMargin(0)
         menuBarLayout.setContentsMargins(0,0,0,0)
         menuBarLayout.setSpacing(0)
 
@@ -383,6 +392,7 @@ class UnrealLiveLinkWindow(QWidget):
         self.table.updateLinkInfo(dagPath, linkedAssetPath, targetAssetPath, targetAssetName, linkedAssetClass, linkedAssetUnrealNativeClass)
 
     def selectedObject(self, hasSelection):
+        enable = self.table.isEnabled() and hasSelection
         self.addSelectionButton.setEnabled(self.table.isEnabled() and hasSelection)
 
     def isPauseAnimSeqSyncEnabled(self):
