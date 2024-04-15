@@ -22,6 +22,8 @@
 
 import os
 
+usingPyside6 = False
+
 try:
   from PySide2.QtCore import *
   from PySide2.QtGui import *
@@ -29,10 +31,18 @@ try:
   from PySide2 import __version__
   import PySide2.QtCore
 except ImportError:
-  from PySide.QtCore import *
-  from PySide.QtGui import *
-  from PySide import __version__
-  import PySide.QtCore
+    try:
+        from PySide.QtCore import *
+        from PySide.QtGui import *
+        from PySide import __version__
+        import PySide.QtCore
+    except ImportError:
+        from PySide6.QtCore import *
+        from PySide6.QtGui import *
+        from PySide6.QtWidgets import *
+        from PySide6 import __version__
+        import PySide6.QtCore
+        usingPyside6 = True
 
 from UnrealLiveLinkSubjectTable import *
 from UnrealLiveLinkSettings import *
@@ -129,7 +139,8 @@ class UnrealLiveLinkWindow(QWidget):
         self.connectionFrame = QLabel()
         self.connectionFrame.setTextFormat(Qt.RichText)
         self.connectionFrame.setText('<b>No Connection</b>')
-        self.connectionFrame.setMargin(0)
+        if not usingPyside6:
+            self.connectionFrame.setMargin(0)
         self.connectionFrame.setContentsMargins(5,3,0,0)
 
         # Menu bar
@@ -182,7 +193,8 @@ class UnrealLiveLinkWindow(QWidget):
 
         # Menu bar layout
         menuBarLayout = QHBoxLayout()
-        menuBarLayout.setMargin(0)
+        if not usingPyside6:
+           menuBarLayout.setMargin(0)
         menuBarLayout.setContentsMargins(0,0,0,0)
         menuBarLayout.setSpacing(0)
 

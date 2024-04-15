@@ -62,10 +62,18 @@ if IsAutomatedTest is None:
     try:
       from shiboken2 import wrapInstance
     except ImportError:
-      from shiboken import wrapInstance
-    from PySide2.QtWidgets import QWidget, QVBoxLayout
-    from PySide2.QtCore import QUrl, QJsonDocument, QJsonArray, QProcess
-    from PySide2.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkSession, QNetworkConfigurationManager, QNetworkReply
+        try:
+            from shiboken import wrapInstance
+        except ImportError:
+            from shiboken6 import wrapInstance
+    try:
+        from PySide2.QtWidgets import QWidget, QVBoxLayout
+        from PySide2.QtCore import QUrl, QJsonDocument, QJsonArray, QProcess
+        from PySide2.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkSession, QNetworkConfigurationManager, QNetworkReply
+    except ImportError:
+        from PySide6.QtWidgets import QWidget, QVBoxLayout
+        from PySide6.QtCore import QUrl, QJsonDocument, QJsonArray, QProcess
+        from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 else:
     # Create dummy classes when running automated tests
     class MayaQWidgetDockableMixin():
