@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <chrono>
 
 #include "RequiredProgramMainCPPInclude.h"
 
@@ -36,6 +37,7 @@
 #include "UnrealInitializer/UnrealInitializer.h"
 
 #include <thread>
+#include <unordered_map>
 
 IMPLEMENT_APPLICATION(MayaUnrealLiveLinkPlugin, "MayaUnrealLiveLinkPlugin");
 
@@ -1568,23 +1570,31 @@ MTime::Unit CurrentTimeUnit = MTime::kInvalid;
 bool gTimeChangedReceived = false;
 FQualifiedFrameTime TimeReceived;
 std::atomic<bool> SendUpdatedData {false};
+std::atomic<bool> IsManipulationComplete { false };
+std::chrono::steady_clock::time_point LastSendTime;
+const int MinTimeIntervalMs = 50;
 
 // Helper method to send data to unreal when SendUpdatedData is set.
 void StreamDataToUnreal()
 {
-	if (!LiveLinkObjectTransformSyncCommand::IsEnabled()) {
-		if (!SendUpdatedData)
-		{
-			return;
-		}
-
-		// Do we need this?
-		if (gTimeChangedReceived)
-		{
-			gTimeChangedReceived = false;
-			return;
-		}
+	if (!LiveLinkObjectTransformSyncCommand::IsEnabled() && !SendUpdatedData) {
+		return;
 	}
+
+	if (gTimeChangedReceived)
+	{
+		gTimeChangedReceived = false;
+		return;
+	}
+
+	auto Now = std::chrono::high_resolution_clock::now();
+	auto TimeElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(Now - LastSendTime).count();
+	
+	if(!SendUpdatedData && TimeElapsed < MinTimeIntervalMs && !IsManipulationComplete)
+		return;
+
+	IsManipulationComplete = false;
+	LastSendTime = Now;
 
 	auto& StreamManager = MayaLiveLinkStreamManager::TheOne();
 	auto TimeUnit = MAnimControl::currentTime().unit();
@@ -1636,10 +1646,28 @@ void StreamOnIdleTask(void* ClientData)
 		return;
 	}
 
-	std::shared_ptr<IMStreamedEntity> Subject = *static_cast<std::shared_ptr<IMStreamedEntity>*>(ClientData);
+	IsManipulationComplete = true;
+
+	// In some situations (such as manipulating an HIK Effector in Full Body mode), a lot of Attributes can be
+	// changing at once, and each of those attribute changes registers for an Idle callback. This results in 
+	// lots of sends for the same Subject at one time. This map protects against that by not sending it again
+	// for the same Subject if we sent very recently.
+	static std::unordered_map<void*, double> s_mostRecentSends;
 	double StreamTime = FPlatformTime::Seconds();
+
+	std::shared_ptr<IMStreamedEntity> Subject = *static_cast<std::shared_ptr<IMStreamedEntity>*>(ClientData);
+
+	auto it = s_mostRecentSends.find(ClientData);
+	if (it != s_mostRecentSends.end())
+	{
+		if (StreamTime - it->second < (1.0 / static_cast<double>(MinTimeIntervalMs)))
+			return;
+	}
+
 	auto FrameNumber = MAnimControl::currentTime().value();
 	Subject->OnStream(StreamTime, FrameNumber);
+
+	s_mostRecentSends[ClientData] = StreamTime;
 }
 
 void StreamOnIdle(std::shared_ptr<IMStreamedEntity>& Subject, MGlobal::MIdleTaskPriority Priority)
